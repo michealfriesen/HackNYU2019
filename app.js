@@ -79,18 +79,20 @@ const init = async () => {
         
             var dataPromise = admin.database().ref(`/users/${request.query.userId}/`);
             let data = dataPromise.once('value').then((snapshot) => {
-                let currentEntries = snapshot.val().currentEntries || 0;
+                let currentEntries = snapshot.val().currentEntries;
+                if (currentEntries == null){
+                    currentEntries = 0;
+                }
             
-                    admin.database().ref('users/' + request.query.userId + `/entries/entry${currentEntries + 1}`).update({
-                        text: request.query.text,
-                        classifications: '' //TODO
-                    });
-                    admin.database().ref('users/' + request.query.userId).update({
-                        currentEntries: currentEntries + 1,
-                    });
+                admin.database().ref('users/' + request.query.userId + `/entries/entry${currentEntries + 1}`).update({
+                    text: request.query.text,
+                    classifications: '' //TODO
+                });
+                admin.database().ref('users/' + request.query.userId).update({
+                    currentEntries: currentEntries + 1,
+                });
             })
-        
-            return true;
+            return 200;
         }
     });
 
