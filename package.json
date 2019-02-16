@@ -22,6 +22,7 @@
   },
   "homepage": "https://github.com/michealfriesen/HackNYU2019#readme",
   "dependencies": {
+    "@google-cloud/language": "^2.0.1",
     "dotenv": "^6.2.0",
     "hapi": "^18.1.0",
     "inert": "^5.1.2",
