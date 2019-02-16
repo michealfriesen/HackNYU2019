@@ -13,4 +13,4 @@ Ensure you create a google project, with natural language processing enabled, th
 **Step 3:**
 ```npm start```
 
-This will start the server at localhost:8080.
+This will start the server at localhost:8080
