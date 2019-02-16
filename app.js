@@ -10,7 +10,8 @@ require('dotenv').config();
 
 const server = Hapi.server({
     port: process.env.PORT || 8080,
-    host: '0.0.0.0'
+    host: '0.0.0.0',
+    routes: { cors: true }
 });
 
 
@@ -44,12 +45,6 @@ const init = async () => {
 
         method: 'POST',
         path: '/nlp',
-        config: {
-            cors: {
-                origin: ['*'],
-                additionalHeaders: ['cache-control', 'x-requested-with']
-            }
-        },
         handler: async (request, h) => {
 
             // Instantiates a client
