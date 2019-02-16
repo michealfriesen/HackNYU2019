@@ -1,0 +1,31 @@
+{
+  "name": "hacknyu2019",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node app.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/michealfriesen/HackNYU2019.git"
+  },
+  "keywords": [
+    "NLP",
+    "Journal"
+  ],
+  "author": "Micheal Friesen, Max Kurapov",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/michealfriesen/HackNYU2019/issues"
+  },
+  "homepage": "https://github.com/michealfriesen/HackNYU2019#readme",
+  "dependencies": {
+    "dotenv": "^6.2.0",
+    "hapi": "^18.1.0",
+    "inert": "^5.1.2",
+    "path": "^0.12.7",
+    "wreck": "^14.1.4"
+  }
+}
