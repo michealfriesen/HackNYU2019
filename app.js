@@ -9,9 +9,11 @@ const language = require('@google-cloud/language');
 require('dotenv').config();
 
 const server = Hapi.server({
-    port: 8080,
+    port: process.env.PORT || 8080,
     host: 'localhost'
 });
+
+
 
 const init = async () => {
 
