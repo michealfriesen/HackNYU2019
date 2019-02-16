@@ -44,6 +44,12 @@ const init = async () => {
 
         method: 'POST',
         path: '/nlp',
+        config: {
+            cors: {
+                origin: ['*'],
+                additionalHeaders: ['cache-control', 'x-requested-with']
+            }
+        },
         handler: async (request, h) => {
 
             // Instantiates a client
@@ -62,11 +68,6 @@ const init = async () => {
 
             return result;
         },
-        options: {
-
-            description: 'Return the sentiment analysis of a passed text file',
-            notes: 'This function will return an error if the text parameter is not filled.'
-        }
     })
 };
 
