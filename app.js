@@ -3,6 +3,7 @@
 const Path = require('path');
 const Wreck = require('wreck');
 const Hapi = require('hapi');
+const EmailValidator = require("email-validator")
 const firebase = require("firebase");
 
 // Google cloud language api
@@ -23,12 +24,14 @@ var config = {
   };
 firebase.initializeApp(config);
 
-var serviceAccount = require(Path.join(__dirname, process.env.GOOGLE_FIREBASE_DB_ADMIN_FILENAME));
+const serviceAccount = require(Path.join(__dirname, process.env.GOOGLE_FIREBASE_DB_ADMIN_FILENAME));
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
   databaseURL: process.env.GOOGLE_FIREBASE_DB_URL
 });
+
+
 
 const server = Hapi.server({
     port: process.env.PORT || 8080,
@@ -49,22 +52,45 @@ const init = async () => {
         path: '/',
         handler: (request, h) => {
 
-            admin.database().ref("users").set({
-                max: {
-                    password: "test"
-                }
-            })
-            return 'Hello World!';
+            return 'Server is up!';
         }
     });
 
     server.route({
 
         method: 'GET',
-        path: '/login',
+        path: '/entry',
         handler: (request, h) => {
 
-            return h.file(Path.join(__dirname, 'public', 'login.html'));
+            console.log(request.query)
+
+            var dataPromise = admin.database().ref(`/users/${request.query.userId}/`);
+            return dataPromise.once('value').then((snapshot) => {
+                return snapshot.val();
+            });
+        }
+    });
+
+    server.route({
+
+        method: 'PUT',
+        path: '/entry',
+        handler: (request, h) => {
+        
+            var dataPromise = admin.database().ref(`/users/${request.query.userId}/`);
+            let data = dataPromise.once('value').then((snapshot) => {
+                let currentEntries = snapshot.val().currentEntries || 0;
+            
+                    admin.database().ref('users/' + request.query.userId + `/entries/entry${currentEntries + 1}`).update({
+                        text: request.query.text,
+                        classifications: '' //TODO
+                    });
+                    admin.database().ref('users/' + request.query.userId).update({
+                        currentEntries: currentEntries + 1,
+                    });
+            })
+        
+            return true;
         }
     });
 
