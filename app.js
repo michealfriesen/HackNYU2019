@@ -40,15 +40,15 @@ const init = async () => {
 
     server.route({
 
-        method: 'GET',
-        path: '/npl',
+        method: 'POST',
+        path: '/nlp',
         handler: async (request, h) => {
-            
+
             // Instantiates a client
             const client = new language.LanguageServiceClient();
             
             // The text to analyze
-            const text = 'Hello, world!';
+            const text = request.payload.text;
             
             const document = {
                 content: text,
@@ -56,10 +56,14 @@ const init = async () => {
             };
             
             // Detects the sentiment of the text
-            const [result] = await client.analyzeSentiment({document: document});
-            const sentiment = result.documentSentiment;
-            
-            return (`Text: ${text}, Sentiment score: ${sentiment.score}, Sentiment magnitude: ${sentiment.magnitude}`);
+            const [result] = await client.analyzeEntitySentiment({document: document});
+
+            return result;
+        },
+        options: {
+
+            description: 'Return the sentiment analysis of a passed text file',
+            notes: 'This function will return an error if the text parameter is not filled.'
         }
     })
 };
