@@ -3,10 +3,32 @@
 const Path = require('path');
 const Wreck = require('wreck');
 const Hapi = require('hapi');
+const firebase = require("firebase");
 
 // Google cloud language api
 const language = require('@google-cloud/language');
 require('dotenv').config();
+
+// Firebase Config stuff. 
+var admin = require("firebase-admin");
+
+// Initialize Firebase
+var config = {
+    apiKey: process.env.GOOGLE_FIREBASE_API_KEY,
+    authDomain: process.env.GOOGLE_FIREBASE_AUTH_DOM,
+    databaseURL: process.env.GOOGLE_FIREBASE_DB_URL,
+    projectId: process.env.GOOGLE_FIREBASE_PROJECT_ID,
+    storageBucket: process.env.GOOGLE_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: process.env.GOOGLE_FIREBASE_MESSAGING_SENDER_ID
+  };
+firebase.initializeApp(config);
+
+var serviceAccount = require(Path.join(__dirname, process.env.GOOGLE_FIREBASE_DB_ADMIN_FILENAME));
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+  databaseURL: process.env.GOOGLE_FIREBASE_DB_URL
+});
 
 const server = Hapi.server({
     port: process.env.PORT || 8080,
@@ -27,6 +49,11 @@ const init = async () => {
         path: '/',
         handler: (request, h) => {
 
+            admin.database().ref("users").set({
+                max: {
+                    password: "test"
+                }
+            })
             return 'Hello World!';
         }
     });

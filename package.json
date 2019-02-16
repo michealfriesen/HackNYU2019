@@ -24,6 +24,8 @@
   "dependencies": {
     "@google-cloud/language": "^2.0.1",
     "dotenv": "^6.2.0",
+    "firebase": "^5.8.3",
+    "firebase-admin": "^7.0.0",
     "hapi": "^18.1.0",
     "inert": "^5.1.2",
     "path": "^0.12.7",
