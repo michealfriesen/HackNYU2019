@@ -79,71 +79,34 @@ const init = async () => {
             return new Promise((resolve, reject) => {
 
                 var dataPromise = admin.database().ref(`/users/${request.query.userId}/`);
-                let data = dataPromise.once('value').then((snapshot) => {
+                return dataPromise.once('value').then((snapshot) => {
                     let currentEntries = snapshot.val().currentEntries;
                     if (currentEntries == null) {
                         currentEntries = 0;
                     }
 
-                    // Function to do classificiation
-                    const document = {
-                        content: request.query.body,
-                        type: 'PLAIN_TEXT',
+                    let update = {
+                        date: new Date().toString(),
+                        id: currentEntries + 1,
                     };
-                    // Instantiates a client
-                    const client = new language.LanguageServiceClient();
 
+                    admin.database().ref('users/' + request.query.userId + `/entries/${currentEntries + 1}`).update({
+                        date: new Date().toString(),
+                        id: currentEntries + 1,
+                    });
+                    admin.database().ref('users/' + request.query.userId).update({
+                        currentEntries: currentEntries + 1,
+                    });
 
-                    let classificationArray = []
-                    // Detects the sentiment of the text
-                    // Detects the sentiment of the document
-
-
-                    return client
-                        .analyzeEntitySentiment({
-                            document: document
-                        })
-                        .then(results => {
-
-                            results[0].entities.forEach((entity, index) => {
-                                classificationArray[index] = {
-                                    name: entity.name.toLowerCase(),
-                                    salience: entity.salience,
-                                    sentiment: entity.sentiment.score
-                                }
-                            })
-
-                            let update = {
-                                body: request.query.body,
-                                classifications: classificationArray,
-                                title: request.query.title,
-                                date: new Date().toString(),
-                                id: currentEntries + 1,
-                            };
-
-                            admin.database().ref('users/' + request.query.userId + `/entries/${currentEntries + 1}`).update({
-                                body: request.query.body,
-                                classifications: classificationArray,
-                                title: request.query.title,
-                                date: new Date().toString(),
-                                id: currentEntries + 1,
-                            });
-                            admin.database().ref('users/' + request.query.userId).update({
-                                currentEntries: currentEntries + 1,
-                            });
-
-                            return resolve(update);
-
-
-                        })
-                        .catch(err => {
-                            console.error('ERROR:', err);
-                            reject('error')
-                        });
+                    return resolve(update);
+                    })
+                    .catch(err => {
+                        console.error('ERROR:', err);
+                        return reject('error')
+                    });
                 })
-            })
-        }
-    });
+            }
+        })
 
 
     server.route({
@@ -152,44 +115,54 @@ const init = async () => {
         path: '/entry',
         handler: (request, h) => {
 
-            // Function to do classificiation (Because we are resubmitting)
-            const document = {
-                content: request.payload.entry.body,
-                type: 'PLAIN_TEXT',
-            };
-            // Instantiates a client
-            const client = new language.LanguageServiceClient();
+            return new Promise((resolve, reject) => {
+                // Function to do classificiation (Because we are resubmitting)
+                const document = {
+                    content: request.query.entryBody,
+                    type: 'PLAIN_TEXT',
+                };
+                // Instantiates a client
+                const client = new language.LanguageServiceClient();
 
 
-            let classificationArray = []
-            // Detects the sentiment of the text
-            // Detects the sentiment of the document
-            client
-                .analyzeEntitySentiment({
-                    document: document
-                })
-                .then(results => {
-
-                    results[0].entities.forEach((entity, index) => {
-                        classificationArray[index] = {
-                            name: entity.name.toLowerCase(),
-                            salience: entity.salience,
-                            sentiment: entity.sentiment.score
-                        }
+                let classificationArray = []
+                // Detects the sentiment of the text
+                // Detects the sentiment of the document
+                return client
+                    .analyzeEntitySentiment({
+                        document: document
                     })
+                    .then(results => {
 
-                    console.log(classificationArray);
+                        results[0].entities.forEach((entity, index) => {
+                            classificationArray[index] = {
+                                name: entity.name.toLowerCase(),
+                                salience: entity.salience,
+                                sentiment: entity.sentiment.score
+                            }
+                        })
 
-                    admin.database().ref('users/' + request.query.userId + `/entries/${request.query.entryId}`).update({
-                        body: request.query.entryBody,
-                        classifications: classificationArray,
-                        title: request.query.entryTitle,
-                        date: new Date().toString()
+                        const update = {
+                            body: request.query.entryBody,
+                            classifications: classificationArray,
+                            title: request.query.entryTitle,
+                            date: new Date().toString() 
+                        }
+
+                        admin.database().ref('users/' + request.query.userId + `/entries/${request.query.entryId}`).update({
+                            body: request.query.entryBody,
+                            classifications: classificationArray,
+                            title: request.query.entryTitle,
+                            date: new Date().toString()
+                        });
+
+                        return resolve(update);
+                    })
+                    .catch(err => {
+                        console.error('ERROR:', err);
+                        return reject(err);
                     });
-                })
-                .catch(err => {
-                    console.error('ERROR:', err);
-                });
+            })
         }
     })
 
