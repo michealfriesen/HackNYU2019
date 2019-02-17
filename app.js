@@ -21,14 +21,14 @@ var config = {
     projectId: process.env.GOOGLE_FIREBASE_PROJECT_ID,
     storageBucket: process.env.GOOGLE_FIREBASE_STORAGE_BUCKET,
     messagingSenderId: process.env.GOOGLE_FIREBASE_MESSAGING_SENDER_ID
-  };
+};
 firebase.initializeApp(config);
 
 const serviceAccount = require(Path.join(__dirname, process.env.GOOGLE_FIREBASE_DB_ADMIN_FILENAME));
 
 admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-  databaseURL: process.env.GOOGLE_FIREBASE_DB_URL
+    credential: admin.credential.cert(serviceAccount),
+    databaseURL: process.env.GOOGLE_FIREBASE_DB_URL
 });
 
 
@@ -36,7 +36,9 @@ admin.initializeApp({
 const server = Hapi.server({
     port: process.env.PORT || 8080,
     host: '0.0.0.0',
-    routes: { cors: true }
+    routes: {
+        cors: true
+    }
 });
 
 
@@ -70,31 +72,102 @@ const init = async () => {
 
     server.route({
 
+        method: 'POST',
+        path: '/entry',
+        handler: (request, h) => {
+
+            return new Promise((resolve, reject) => {
+
+                var dataPromise = admin.database().ref(`/users/${request.query.userId}/`);
+                let data = dataPromise.once('value').then((snapshot) => {
+                    let currentEntries = snapshot.val().currentEntries;
+                    if (currentEntries == null) {
+                        currentEntries = 0;
+                    }
+
+                    // Function to do classificiation
+                    const document = {
+                        content: request.query.body,
+                        type: 'PLAIN_TEXT',
+                    };
+                    // Instantiates a client
+                    const client = new language.LanguageServiceClient();
+
+
+                    let classificationArray = []
+                    // Detects the sentiment of the text
+                    // Detects the sentiment of the document
+
+
+                    return client
+                        .analyzeEntitySentiment({
+                            document: document
+                        })
+                        .then(results => {
+
+                            results[0].entities.forEach((entity, index) => {
+                                classificationArray[index] = {
+                                    name: entity.name.toLowerCase(),
+                                    salience: entity.salience,
+                                    sentiment: entity.sentiment.score
+                                }
+                            })
+
+                            let update = {
+                                body: request.query.body,
+                                classifications: classificationArray,
+                                title: request.query.title,
+                                date: new Date().toString(),
+                                id: currentEntries + 1,
+                            };
+
+                            admin.database().ref('users/' + request.query.userId + `/entries/${currentEntries + 1}`).update({
+                                body: request.query.body,
+                                classifications: classificationArray,
+                                title: request.query.title,
+                                date: new Date().toString(),
+                                id: currentEntries + 1,
+                            });
+                            admin.database().ref('users/' + request.query.userId).update({
+                                currentEntries: currentEntries + 1,
+                            });
+
+                            return resolve(update);
+
+
+                        })
+                        .catch(err => {
+                            console.error('ERROR:', err);
+                            reject('error')
+                        });
+                })
+            })
+        }
+    });
+
+
+    server.route({
+
         method: 'PUT',
         path: '/entry',
         handler: (request, h) => {
-        
-            var dataPromise = admin.database().ref(`/users/${request.query.userId}/`);
-            let data = dataPromise.once('value').then((snapshot) => {
-                let currentEntries = snapshot.val().currentEntries;
-                if (currentEntries == null){
-                    currentEntries = 0;
-                }
 
-                 // Function to do classificiation
-                 const document = {
-                    content: request.query.body,
-                    type: 'PLAIN_TEXT',
-                };
-                 // Instantiates a client
-                const client = new language.LanguageServiceClient();
-                
+            // Function to do classificiation (Because we are resubmitting)
+            const document = {
+                content: request.payload.entry.body,
+                type: 'PLAIN_TEXT',
+            };
+            // Instantiates a client
+            const client = new language.LanguageServiceClient();
 
-                let classificationArray = []
-                // Detects the sentiment of the text
-                // Detects the sentiment of the document
-                client
-                .analyzeEntitySentiment({document: document})
+
+            let classificationArray = []
+            // Detects the sentiment of the text
+            // Detects the sentiment of the document
+            client
+                .analyzeEntitySentiment({
+                    document: document
+                })
                 .then(results => {
 
                     results[0].entities.forEach((entity, index) => {
@@ -107,65 +180,61 @@ const init = async () => {
 
                     console.log(classificationArray);
 
-                    admin.database().ref('users/' + request.query.userId + `/entries/${currentEntries + 1}`).update({
-                        body: request.query.body,
+                    admin.database().ref('users/' + request.query.userId + `/entries/${request.query.entryId}`).update({
+                        body: request.query.entryBody,
                         classifications: classificationArray,
-                        title: request.query.title,
+                        title: request.query.entryTitle,
                         date: new Date().toString()
-                    });
-                    admin.database().ref('users/' + request.query.userId).update({
-                        currentEntries: currentEntries + 1,
                     });
                 })
                 .catch(err => {
-                console.error('ERROR:', err);
+                    console.error('ERROR:', err);
                 });
-            })
-
-            return 200;
         }
-    });
+    })
 
     server.route({
 
         method: 'POST',
         path: '/nlp',
         handler: async (request, h) => {
-            
+
             // Getting the text to analyze
             let dataPromise = admin.database().ref(`/users/${request.query.userId}/entries/${request.query.entryNumber}`);
             return dataPromise.once('value').then((snapshot) => {
                 const body = snapshot.val().body;
 
-                    
+
                 const document = {
                     content: body,
                     type: 'PLAIN_TEXT',
                 };
-                 // Instantiates a client
+                // Instantiates a client
                 const client = new language.LanguageServiceClient();
-                
+
                 // Detects the sentiment of the text
                 // Detects the sentiment of the document
                 client
-                .analyzeEntitySentiment({document: document})
-                .then(results => {
-
-                    results[0].entities.forEach((entity, index) => {
-                        console.log(`Title: ${entity.name.toLowerCase()} Salience: ${entity.salience} Sentiment: ${entity.sentiment.score}`);
-
-                        admin.database().ref(`users/${request.query.userId}/entries/${request.query.entryNumber}/classifications/${index}`).update({
-                            name: entity.name.toLowerCase(),
-                            salience: entity.salience,
-                            sentiment: entity.sentiment.score
-                        });
+                    .analyzeEntitySentiment({
+                        document: document
                     })
-                })
-                .catch(err => {
-                console.error('ERROR:', err);
-                });
+                    .then(results => {
 
-                    // Do something here.
+                        results[0].entities.forEach((entity, index) => {
+                            console.log(`Title: ${entity.name.toLowerCase()} Salience: ${entity.salience} Sentiment: ${entity.sentiment.score}`);
+
+                            admin.database().ref(`users/${request.query.userId}/entries/${request.query.entryNumber}/classifications/${index}`).update({
+                                name: entity.name.toLowerCase(),
+                                salience: entity.salience,
+                                sentiment: entity.sentiment.score
+                            });
+                        })
+                    })
+                    .catch(err => {
+                        console.error('ERROR:', err);
+                    });
+
+                // Do something here.
                 return 'ayy'
             });
         },
