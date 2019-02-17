@@ -80,37 +80,37 @@ const init = async () => {
 
                 var dataPromise = admin.database().ref(`/users/${request.query.userId}/`);
                 return dataPromise.once('value').then((snapshot) => {
-                    let currentEntries = snapshot.val().currentEntries;
-                    if (currentEntries == null) {
-                        currentEntries = 0;
-                    }
+                        let currentEntries = snapshot.val().currentEntries;
+                        if (currentEntries == null) {
+                            currentEntries = 0;
+                        }
 
-                    let update = {
-                        date: new Date().toString(),
-                        id: currentEntries + 1,
-                    };
+                        let update = {
+                            date: new Date().toString(),
+                            id: currentEntries + 1,
+                        };
 
-                    admin.database().ref('users/' + request.query.userId + `/entries/${currentEntries + 1}`).update({
-                        date: new Date().toString(),
-                        id: currentEntries + 1,
-                        title: '',
-                        body: '',
-                        classification: ''
+                        admin.database().ref('users/' + request.query.userId + `/entries/${currentEntries + 1}`).update({
+                            date: new Date().toString(),
+                            id: currentEntries + 1,
+                            title: '',
+                            body: '',
+                            classification: ''
 
-                    });
-                    admin.database().ref('users/' + request.query.userId).update({
-                        currentEntries: currentEntries + 1,
-                    });
+                        });
+                        admin.database().ref('users/' + request.query.userId).update({
+                            currentEntries: currentEntries + 1,
+                        });
 
-                    return resolve(update);
+                        return resolve(update);
                     })
                     .catch(err => {
                         console.error('ERROR:', err);
                         return reject('error')
                     });
-                })
-            }
-        })
+            })
+        }
+    })
 
 
     server.route({
@@ -150,7 +150,7 @@ const init = async () => {
                             body: request.query.entryBody,
                             classifications: classificationArray,
                             title: request.query.entryTitle,
-                            date: new Date().toString() 
+                            date: new Date().toString()
                         }
 
                         admin.database().ref('users/' + request.query.userId + `/entries/${request.query.entryId}`).update({
@@ -225,7 +225,7 @@ const init = async () => {
 
             var dataPromise = admin.database().ref(`/users/${request.query.userId}/`);
             return dataPromise.once('value').then((snapshot) => {
-                
+
                 let userClass = {}
                 console.log(snapshot.val())
                 // Aggregate the entry data.
@@ -233,14 +233,13 @@ const init = async () => {
 
                     if (entry.classifications && entry.classifications.length > 0) {
 
-                        entry.classifications.forEach((classification,index) => {
+                        entry.classifications.forEach((classification, index) => {
 
-                            if (userClass[classification.name]){
+                            if (userClass[classification.name]) {
                                 userClass[classification.name].sentiment += classification.sentiment;
                                 userClass[classification.name].salience += classification.salience;
                                 userClass[classification.name].frequency++;
-                            }
-                            else {
+                            } else {
                                 userClass[classification.name] = {
 
                                     sentiment: classification.sentiment,
@@ -252,15 +251,57 @@ const init = async () => {
                     }
                 })
 
+                var sortable = [];
+                let index = 0;
+                for (var entity in userClass) {
+
+                    sortable[index] = {
+                        sal: userClass[entity].salience,
+                        freq: userClass[entity].frequency,
+                        sent: userClass[entity].sentiment,
+                        name: Object.keys(userClass)[index],
+                        index: index
+                    }
+                    index++;
+                }
+
+                sortable.sort(function (a, b) {
+                    return b.sal - a.sal;
+                });
+
+                userClass = {}
+
+                for(let i = 0; i < 5; i++){
+
+                    userClass[sortable[i].name] = {
+                        sentiment: sortable[i].sent,
+                        salience: sortable[i].sal,
+                        frequency: sortable[i].freq
+                    }
+                }
+
+
                 admin.database().ref('users/' + request.query.userId).update({
                     userClass
                 });
                 return userClass
             });
-
-            
         }
     })
+
+    server.route({
+
+        method: 'POST',
+        path: '/detectMatches',
+        handler: (request, h) => {
+
+            var dataPromise = admin.database().ref(`/users/${request.query.userId}/`);
+            return dataPromise.once('value').then((snapshot) => {
+
+            })
+        }
+    })
+
 };
 
 process.on('unhandledRejection', (err) => {
