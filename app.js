@@ -364,7 +364,10 @@ const init = async () => {
                                             //TODO: Maybe this should be the average sentiment. 
                                             if(((userArray[user].class[name].sentiment > .2)&&(userArray[j].class[otherName].sentiment > .2)) || ((userArray[user].class[name].sentiment < -.2)&&(userArray[j].class[otherName].sentiment < -.2))) {
 
-                                                commonTags.push(name)
+                                                commonTags.push({
+                                                    name: name,
+                                                    sentiment: (userArray[user].class[name].sentiment + userArray[j].class[otherName].sentiment) / 2
+                                                })
 
                                                 matches[userArray[user].name].conversations.push({
                                                     otherUser: userArray[j].name,
