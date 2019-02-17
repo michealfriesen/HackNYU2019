@@ -93,6 +93,10 @@ const init = async () => {
                     admin.database().ref('users/' + request.query.userId + `/entries/${currentEntries + 1}`).update({
                         date: new Date().toString(),
                         id: currentEntries + 1,
+                        title: '',
+                        body: '',
+                        classification: ''
+
                     });
                     admin.database().ref('users/' + request.query.userId).update({
                         currentEntries: currentEntries + 1,
@@ -211,6 +215,19 @@ const init = async () => {
                 return 'ayy'
             });
         },
+    })
+
+    server.route({
+
+        method: 'POST',
+        path: '/nlpUser',
+        handler: (request, h) => {
+
+            var dataPromise = admin.database().ref(`/users/${request.query.userId}/`);
+            return dataPromise.once('value').then((snapshot) => {
+                return snapshot.val();
+            });
+        }
     })
 };
 
