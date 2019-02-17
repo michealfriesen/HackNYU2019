@@ -40,7 +40,6 @@ const server = Hapi.server({
 });
 
 
-
 const init = async () => {
 
     await server.register(require('inert'));
@@ -62,8 +61,6 @@ const init = async () => {
         path: '/entry',
         handler: (request, h) => {
 
-            console.log(request.query)
-
             var dataPromise = admin.database().ref(`/users/${request.query.userId}/`);
             return dataPromise.once('value').then((snapshot) => {
                 return snapshot.val();
@@ -83,15 +80,48 @@ const init = async () => {
                 if (currentEntries == null){
                     currentEntries = 0;
                 }
-            
-                admin.database().ref('users/' + request.query.userId + `/entries/entry${currentEntries + 1}`).update({
-                    text: request.query.text,
-                    classifications: '' //TODO
-                });
-                admin.database().ref('users/' + request.query.userId).update({
-                    currentEntries: currentEntries + 1,
+
+                 // Function to do classificiation
+                 const document = {
+                    content: request.query.body,
+                    type: 'PLAIN_TEXT',
+                };
+                 // Instantiates a client
+                const client = new language.LanguageServiceClient();
+                
+
+                let classificationArray = []
+                // Detects the sentiment of the text
+                // Detects the sentiment of the document
+                client
+                .analyzeEntitySentiment({document: document})
+                .then(results => {
+
+                    results[0].entities.forEach((entity, index) => {
+                        classificationArray[index] = {
+                            name: entity.name.toLowerCase(),
+                            salience: entity.salience,
+                            sentiment: entity.sentiment.score
+                        }
+                    })
+
+                    console.log(classificationArray);
+
+                    admin.database().ref('users/' + request.query.userId + `/entries/${currentEntries + 1}`).update({
+                        body: request.query.body,
+                        classifications: classificationArray,
+                        title: request.query.title,
+                        date: new Date().toString()
+                    });
+                    admin.database().ref('users/' + request.query.userId).update({
+                        currentEntries: currentEntries + 1,
+                    });
+                })
+                .catch(err => {
+                console.error('ERROR:', err);
                 });
             })
+
             return 200;
         }
     });
@@ -101,22 +131,43 @@ const init = async () => {
         method: 'POST',
         path: '/nlp',
         handler: async (request, h) => {
+            
+            // Getting the text to analyze
+            let dataPromise = admin.database().ref(`/users/${request.query.userId}/entries/${request.query.entryNumber}`);
+            return dataPromise.once('value').then((snapshot) => {
+                const body = snapshot.val().body;
 
-            // Instantiates a client
-            const client = new language.LanguageServiceClient();
-            
-            // The text to analyze
-            const text = request.payload.text;
-            
-            const document = {
-                content: text,
-                type: 'PLAIN_TEXT',
-            };
-            
-            // Detects the sentiment of the text
-            const [result] = await client.analyzeEntitySentiment({document: document});
+                    
+                const document = {
+                    content: body,
+                    type: 'PLAIN_TEXT',
+                };
+                 // Instantiates a client
+                const client = new language.LanguageServiceClient();
+                
+                // Detects the sentiment of the text
+                // Detects the sentiment of the document
+                client
+                .analyzeEntitySentiment({document: document})
+                .then(results => {
 
-            return result;
+                    results[0].entities.forEach((entity, index) => {
+                        console.log(`Title: ${entity.name.toLowerCase()} Salience: ${entity.salience} Sentiment: ${entity.sentiment.score}`);
+
+                        admin.database().ref(`users/${request.query.userId}/entries/${request.query.entryNumber}/classifications/${index}`).update({
+                            name: entity.name.toLowerCase(),
+                            salience: entity.salience,
+                            sentiment: entity.sentiment.score
+                        });
+                    })
+                })
+                .catch(err => {
+                console.error('ERROR:', err);
+                });
+
+                    // Do something here.
+                return 'ayy'
+            });
         },
     })
 };
