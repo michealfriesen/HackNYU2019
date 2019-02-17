@@ -1,5 +1,5 @@
 # JustWrite (Backend)
-The backend server code used for hackNYU!
+The backend server code used for hackNYU2019!
 
 ## Initialization
 
@@ -14,3 +14,6 @@ Ensure you create a google project, with natural language processing enabled, th
 ```npm start```
 
 This will start the server at localhost:8080
+
+
+To run the front end code, go to https://github.com/mkurapov/HackNYU
