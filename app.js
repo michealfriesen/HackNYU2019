@@ -318,36 +318,43 @@ const init = async () => {
                // return (userArray)
                 // Now we have the list of all users.
                 // Create a "matches" array
-                let matches = [];
+                let matches = {};
+                for (var initUser in userArray) {
 
-                console.log('```````````````This is the user array ````````````````')
-                console.log(userArray)
+                    matches[userArray[initUser].name] = {
+                        conversations: []
+                    }
+                }
+                // console.log(matches)
+
+                // console.log('```````````````This is the user array ````````````````')
+                // console.log(userArray)
 
                 // For each user
                 let i = 0;
                 for (var user in userArray) {
 
-                    console.log('```````````````Each user ````````````````')
-                    console.log(userArray[user].name)
+                    // console.log('```````````````Each user ````````````````')
+                    // console.log(userArray[user].name)
                     // If there is anything to compare to other classes, proceed.
                     if (userArray[user].class) {
-                        console.log(`THIS USER: ${userArray[user].name} has a class.`)
-                        
+                        // console.log(`THIS USER: ${userArray[user].name} has a class.`)
+                        let commonTags = []
                         // Compare to all the other users that haven't compared to the entry yet (leftwards)
                         for (let j = i + 1; j < userArray.length; j++) {
-
+                            console.log(`${userArray[j].name} tags= ${commonTags}`)
+                            commonTags = [] // blank array to store all matched tags
                             // If there is anything to compare, then compare it.
                             if (userArray[j].class ) {
 
-                                console.log(`${userArray[j].name} has entries to compare!`)
+                                // console.log(`${userArray[j].name} has entries to compare!`)
 
                                 for (let name in userArray[user].class) {
 
-                                    console.log(`Comparing ${name} which has a sentiment of ${userArray[user].class[name].sentiment}`)
-                                    
+                                    // console.log(`Comparing ${name} which has a sentiment of ${userArray[user].class[name].sentiment}`)
                                     for (let otherName in userArray[j].class) {
 
-                                        console.log(`To ${otherName} which has a sentiment of ${userArray[j].class[otherName].sentiment}`)
+                                        // console.log(`To ${otherName} which has a sentiment of ${userArray[j].class[otherName].sentiment}`)
 
                                         // The names are the same so check sentiment.
                                         if (otherName == name) {
@@ -357,25 +364,40 @@ const init = async () => {
                                             //TODO: Maybe this should be the average sentiment. 
                                             if(((userArray[user].class[name].sentiment > .2)&&(userArray[j].class[otherName].sentiment > .2)) || ((userArray[user].class[name].sentiment < -.2)&&(userArray[j].class[otherName].sentiment < -.2))) {
 
-                                                matches.push({
-                                                    tag: name,
-                                                    user1: userArray[user].name,
-                                                    user2: userArray[j].name
+                                                commonTags.push(name)
+
+                                                matches[userArray[user].name].conversations.push({
+                                                    otherUser: userArray[j].name,
+                                                    tags: commonTags
+                                                })
+                                                matches[userArray[j].name].conversations.push({
+                                                    otherUser: userArray[user].name,
+                                                    tags: commonTags
                                                 })
                                             }
                                         }
                                     }
+                                    console.log(commonTags)
                                 }
+
                             }
+
                         }
                     }
+
                     i++;
+                }
+                for (let user in matches) {
+                    admin.database().ref('users/' + user).update({
+                        chats: matches[user].conversations
+                    });
                 }
 
                 return matches
             })
         }
     })
+
 
 };
 
