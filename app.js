@@ -225,8 +225,40 @@ const init = async () => {
 
             var dataPromise = admin.database().ref(`/users/${request.query.userId}/`);
             return dataPromise.once('value').then((snapshot) => {
-                return snapshot.val();
+                
+                let userClass = {}
+                console.log(snapshot.val())
+                // Aggregate the entry data.
+                snapshot.val().entries.forEach((entry, index) => {
+
+                    if (entry.classifications && entry.classifications.length > 0) {
+
+                        entry.classifications.forEach((classification,index) => {
+
+                            if (userClass[classification.name]){
+                                userClass[classification.name].sentiment += classification.sentiment;
+                                userClass[classification.name].salience += classification.salience;
+                                userClass[classification.name].frequency++;
+                            }
+                            else {
+                                userClass[classification.name] = {
+
+                                    sentiment: classification.sentiment,
+                                    salience: classification.salience,
+                                    frequency: 1
+                                }
+                            }
+                        })
+                    }
+                })
+
+                admin.database().ref('users/' + request.query.userId).update({
+                    userClass
+                });
+                return userClass
             });
+
+            
         }
     })
 };
