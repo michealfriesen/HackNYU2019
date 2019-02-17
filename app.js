@@ -320,12 +320,18 @@ const init = async () => {
                 // Create a "matches" array
                 let matches = [];
 
+                console.log('```````````````This is the user array ````````````````')
+                console.log(userArray)
+
                 // For each user
                 let i = 0;
                 for (var user in userArray) {
 
+                    console.log('```````````````Each user ````````````````')
+                    console.log(userArray[user].name)
                     // If there is anything to compare to other classes, proceed.
                     if (userArray[user].class) {
+                        console.log(`THIS USER: ${userArray[user].name} has a class.`)
                         
                         // Compare to all the other users that haven't compared to the entry yet (leftwards)
                         for (let j = i + 1; j < userArray.length; j++) {
@@ -333,14 +339,30 @@ const init = async () => {
                             // If there is anything to compare, then compare it.
                             if (userArray[j].class ) {
 
+                                console.log(`${userArray[j].name} has entries to compare!`)
+
                                 for (let name in userArray[user].class) {
+
+                                    console.log(`Comparing ${name} which has a sentiment of ${userArray[user].class[name].sentiment}`)
                                     
                                     for (let otherName in userArray[j].class) {
+
+                                        console.log(`To ${otherName} which has a sentiment of ${userArray[j].class[otherName].sentiment}`)
 
                                         // The names are the same so check sentiment.
                                         if (otherName == name) {
 
                                             // Compare salience, then append to the array if they are similar.
+
+                                            //TODO: Maybe this should be the average sentiment. 
+                                            if(((userArray[user].class[name].sentiment > .2)&&(userArray[j].class[otherName].sentiment > .2)) || ((userArray[user].class[name].sentiment < -.2)&&(userArray[j].class[otherName].sentiment < -.2))) {
+
+                                                matches.push({
+                                                    tag: name,
+                                                    user1: userArray[user].name,
+                                                    user2: userArray[j].name
+                                                })
+                                            }
                                         }
                                     }
                                 }
@@ -348,24 +370,9 @@ const init = async () => {
                         }
                     }
                     i++;
-
-
-                    
-                // For each attribute
-
-
-                // Check if there are any similar entities
-
-                // If they are similar, check if it exists
-                
-                // If it does not, create a match and store it in the array
-
-
-                // Once all matches have been created, update the relationships of each node mentioned in the relationships array
-
-                    
                 }
 
+                return matches
             })
         }
     })
