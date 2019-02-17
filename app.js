@@ -270,8 +270,11 @@ const init = async () => {
                 });
 
                 userClass = {}
+                let thing = 0;
 
-                for(let i = 0; i < 5; i++){
+                if (sortable.length > 5) { thing = 5 }
+                else { thing = sortable.length }
+                for (let i = 0; i < thing; i++) {
 
                     userClass[sortable[i].name] = {
                         sentiment: sortable[i].sent,
@@ -295,8 +298,73 @@ const init = async () => {
         path: '/detectMatches',
         handler: (request, h) => {
 
-            var dataPromise = admin.database().ref(`/users/${request.query.userId}/`);
+            var dataPromise = admin.database().ref(`/users`);
             return dataPromise.once('value').then((snapshot) => {
+
+                let userArray = []
+
+                let index = 0;
+                for(var user in snapshot.val()) {
+
+                    
+
+                    userArray[index] = {
+                        name: user,
+                        class: snapshot.val()[user].userClass
+                    }
+                    index++;
+                }
+
+               // return (userArray)
+                // Now we have the list of all users.
+                // Create a "matches" array
+                let matches = [];
+
+                // For each user
+                let i = 0;
+                for (var user in userArray) {
+
+                    // If there is anything to compare to other classes, proceed.
+                    if (userArray[user].class) {
+                        
+                        // Compare to all the other users that haven't compared to the entry yet (leftwards)
+                        for (let j = i + 1; j < userArray.length; j++) {
+
+                            // If there is anything to compare, then compare it.
+                            if (userArray[j].class ) {
+
+                                for (let name in userArray[user].class) {
+                                    
+                                    for (let otherName in userArray[j].class) {
+
+                                        // The names are the same so check sentiment.
+                                        if (otherName == name) {
+
+                                            // Compare salience, then append to the array if they are similar.
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    i++;
+
+
+                    
+                // For each attribute
+
+
+                // Check if there are any similar entities
+
+                // If they are similar, check if it exists
+                
+                // If it does not, create a match and store it in the array
+
+
+                // Once all matches have been created, update the relationships of each node mentioned in the relationships array
+
+                    
+                }
 
             })
         }
