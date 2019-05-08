@@ -1,5 +1,5 @@
 # JustWrite (Backend)
-The backend server code used for hackNYU2019!
+The backend server code used for hackNYU2019! This project was part of HackNYU 2019 and won Facebooks 1st place prize. You can read about the project and the hackathon more here: https://devpost.com/software/justwrite-backend
 
 ## Initialization
 
